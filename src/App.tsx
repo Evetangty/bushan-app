@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import { db } from './db'
 import { Layout } from './components/Layout'
@@ -35,14 +35,14 @@ function App() {
   if (isSupabaseConfigured) {
     if (authLoading) {
       return (
-        <div className="flex min-h-screen items-center justify-center bg-[#fdf8f0] p-4 text-gray-600">
+        <div className="flex min-h-screen items-center justify-center bg-background p-4 text-[#355b4a]">
           加载中…
         </div>
       )
     }
     if (!session) {
       return (
-        <div className="flex min-h-screen items-center justify-center bg-[#fdf8f0] p-4">
+        <div className="flex min-h-screen items-center justify-center bg-background p-4">
           <LoginPage />
         </div>
       )
@@ -73,7 +73,11 @@ function AuthenticatedApp() {
   const [homeQuery, setHomeQuery] = useState('')
   const [patternQuery, setPatternQuery] = useState('')
   const [finishedQuery, setFinishedQuery] = useState('')
+  const [homeFocused, setHomeFocused] = useState(false)
+  const [patternFocused, setPatternFocused] = useState(false)
+  const [finishedFocused, setFinishedFocused] = useState(false)
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const addEntitySubmittingRef = useRef(false)
 
   const navigate = useNavigate()
 
@@ -144,6 +148,50 @@ function AuthenticatedApp() {
     return finishedProducts.filter((item) => !query || item.name.toLowerCase().includes(query))
   }, [finishedProducts, finishedQuery])
 
+  const homeSuggestions = useMemo(() => {
+    const set = new Set<string>()
+    fabrics.forEach((fabric) => {
+      if (fabric.type) set.add(fabric.type)
+      if (fabric.source) set.add(fabric.source)
+    })
+    return Array.from(set)
+  }, [fabrics])
+
+  const patternSuggestions = useMemo(() => {
+    const set = new Set<string>()
+    patterns.forEach((item) => {
+      if (item.name) set.add(item.name)
+      if (item.source) set.add(item.source)
+    })
+    return Array.from(set)
+  }, [patterns])
+
+  const finishedSuggestions = useMemo(() => {
+    const set = new Set<string>()
+    finishedProducts.forEach((item) => {
+      if (item.name) set.add(item.name)
+    })
+    return Array.from(set)
+  }, [finishedProducts])
+
+  const homeSuggestionList = useMemo(() => {
+    const q = homeQuery.trim().toLowerCase()
+    if (!q) return []
+    return homeSuggestions.filter((x) => x.toLowerCase().includes(q)).slice(0, 6)
+  }, [homeQuery, homeSuggestions])
+
+  const patternSuggestionList = useMemo(() => {
+    const q = patternQuery.trim().toLowerCase()
+    if (!q) return []
+    return patternSuggestions.filter((x) => x.toLowerCase().includes(q)).slice(0, 6)
+  }, [patternQuery, patternSuggestions])
+
+  const finishedSuggestionList = useMemo(() => {
+    const q = finishedQuery.trim().toLowerCase()
+    if (!q) return []
+    return finishedSuggestions.filter((x) => x.toLowerCase().includes(q)).slice(0, 6)
+  }, [finishedQuery, finishedSuggestions])
+
   const saveFabric = async (
     payload: Omit<Fabric, 'id' | 'createdAt' | 'updatedAt' | 'usedQuantity'> & { usedQuantity?: number },
   ) => {
@@ -213,13 +261,26 @@ function AuthenticatedApp() {
         }
       | {
           entityType: 'pattern'
-          data: { name: string; source?: string; imageBase64: string }
+          data: {
+            name: string
+            source?: string
+            imageBase64: string
+            detailRaw?: string
+            sizeCode?: string
+            bust?: string
+            waist?: string
+            hip?: string
+            lengthInfo?: string
+            suitableFabric?: string
+          }
         }
       | {
           entityType: 'finished'
           data: { name: string; imageBase64: string }
         },
   ) => {
+    if (addEntitySubmittingRef.current) return
+    addEntitySubmittingRef.current = true
     const now = Date.now()
     try {
       if (payload.entityType === 'fabric') {
@@ -248,6 +309,13 @@ function AuthenticatedApp() {
             imageBase64: payload.data.imageBase64,
             name: payload.data.name,
             source: payload.data.source,
+            detailRaw: payload.data.detailRaw,
+            sizeCode: payload.data.sizeCode,
+            bust: payload.data.bust,
+            waist: payload.data.waist,
+            hip: payload.data.hip,
+            lengthInfo: payload.data.lengthInfo,
+            suitableFabric: payload.data.suitableFabric,
           })
         } else {
           await db.patterns.add({ id: genId(), ...payload.data, createdAt: now, updatedAt: now })
@@ -271,10 +339,23 @@ function AuthenticatedApp() {
     } catch (err) {
       console.error(err)
       alert(err instanceof Error ? err.message : '保存失败')
+    } finally {
+      addEntitySubmittingRef.current = false
     }
   }
 
-  const saveItem = async (payload: { name: string; source?: string; imageBase64: string }) => {
+  const saveItem = async (payload: {
+    name: string
+    source?: string
+    imageBase64: string
+    detailRaw?: string
+    sizeCode?: string
+    bust?: string
+    waist?: string
+    hip?: string
+    lengthInfo?: string
+    suitableFabric?: string
+  }) => {
     const now = Date.now()
     try {
       if (itemType === 'pattern') {
@@ -284,12 +365,26 @@ function AuthenticatedApp() {
               name: payload.name,
               source: payload.source,
               imageBase64: payload.imageBase64,
+              detailRaw: payload.detailRaw,
+              sizeCode: payload.sizeCode,
+              bust: payload.bust,
+              waist: payload.waist,
+              hip: payload.hip,
+              lengthInfo: payload.lengthInfo,
+              suitableFabric: payload.suitableFabric,
             })
           } else {
             await cloudInsertPattern(userId, {
               imageBase64: payload.imageBase64,
               name: payload.name,
               source: payload.source,
+              detailRaw: payload.detailRaw,
+              sizeCode: payload.sizeCode,
+              bust: payload.bust,
+              waist: payload.waist,
+              hip: payload.hip,
+              lengthInfo: payload.lengthInfo,
+              suitableFabric: payload.suitableFabric,
             })
           }
         } else {
@@ -366,7 +461,8 @@ function AuthenticatedApp() {
     }
   }
 
-  const empty = <p className="rounded-card bg-white p-6 text-center text-gray-500">还没有数据，点击下方按钮开始添加。</p>
+  const empty = <p className="theme-card rounded-card p-6 text-center text-[#4c665a]">这里还是空空的~</p>
+  const noSearchResult = <p className="theme-card rounded-card p-6 text-center text-[#4c665a]">没有搜索结果哦~</p>
 
   return (
     <Layout>
@@ -381,23 +477,46 @@ function AuthenticatedApp() {
                 usedMeters={stats.usedMeters}
                 remainingQuantity={stats.remainingQuantity}
               />
-              <div className="flex flex-col gap-2 rounded-card bg-white p-3 shadow sm:flex-row">
-                <input
-                  className="w-full rounded border p-2"
-                  placeholder="搜索：布料类型/名字/米数"
-                  value={homeQuery}
-                  onChange={(e) => setHomeQuery(e.target.value)}
-                />
+              <div className="theme-card flex items-center gap-2 rounded-card p-3">
+                <div className="relative w-0 flex-1">
+                  <input
+                    className="w-full rounded p-2"
+                    placeholder="搜索：布料类型/名字/米数"
+                    value={homeQuery}
+                    onFocus={() => setHomeFocused(true)}
+                    onBlur={() => setTimeout(() => setHomeFocused(false), 120)}
+                    onChange={(e) => setHomeQuery(e.target.value)}
+                  />
+                  {homeFocused && homeSuggestionList.length > 0 ? (
+                    <div className="theme-card absolute left-0 right-0 top-[calc(100%+6px)] z-20 rounded-card p-1">
+                      {homeSuggestionList.map((item) => (
+                        <button
+                          key={item}
+                          type="button"
+                          className="block w-full rounded px-2 py-1.5 text-left text-sm text-[#355b4a] hover:bg-[#e8dfcf]"
+                          onMouseDown={(e) => {
+                            e.preventDefault()
+                            setHomeQuery(item)
+                            setHomeFocused(false)
+                          }}
+                        >
+                          {item}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
                 <button
                   type="button"
-                  className="rounded border px-3 py-2 text-lg"
+                  className="theme-btn h-[42px] w-[52px] shrink-0 rounded px-0 py-0 text-lg"
                   title="按剩余米数排序"
                   onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
                 >
                   {sortOrder === 'asc' ? '↑' : '↓'}
                 </button>
               </div>
-              {loading ? <p>加载中...</p> : filteredFabrics.length === 0 ? empty : null}
+              {loading ? <p>加载中...</p> : null}
+              {!loading && filteredFabrics.length === 0 && (homeQuery.trim() ? noSearchResult : empty)}
               <div className="space-y-3">
                 {filteredFabrics.map((fabric) => (
                   <FabricCard
@@ -418,7 +537,7 @@ function AuthenticatedApp() {
               <div className="fixed bottom-20 right-4">
                 <button
                   type="button"
-                  className="rounded-full bg-primary px-4 py-3 text-sm font-medium text-white shadow"
+                  className="theme-btn theme-btn-primary rounded-full px-4 py-3 text-sm font-medium"
                   onClick={() => setAddEntityModalOpen(true)}
                 >
                   ➕ 添加
@@ -432,20 +551,48 @@ function AuthenticatedApp() {
           element={
             <div>
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="m-0 text-xl">✂️ 纸样收藏</h2>
-                <button className="rounded bg-primary px-3 py-2 text-white" type="button" onClick={() => openAddItem('pattern')}>
-                  ✂️ 添加纸样
+                <h2 className="section-title m-0 text-2xl">纸样收藏</h2>
+                <button className="theme-btn theme-btn-primary rounded px-3 py-2" type="button" onClick={() => openAddItem('pattern')}>
+                  添加纸样
                 </button>
               </div>
               <div className="mb-3">
-                <input
-                  className="w-full rounded border bg-white p-2"
-                  placeholder="搜索纸样：名称/来源"
-                  value={patternQuery}
-                  onChange={(e) => setPatternQuery(e.target.value)}
-                />
+                <div className="theme-card rounded-card p-3 text-left shadow">
+                  <p className="m-0 text-sm text-[#4c665a]">纸样总数</p>
+                  <p className="m-0 mt-2 text-lg font-semibold">{patterns.length} 份</p>
+                </div>
               </div>
-              {filteredPatterns.length === 0 ? empty : null}
+              <div className="mb-3">
+                <div className="relative">
+                  <input
+                    className="w-full rounded p-2"
+                    placeholder="搜索纸样：名称/来源"
+                    value={patternQuery}
+                    onFocus={() => setPatternFocused(true)}
+                    onBlur={() => setTimeout(() => setPatternFocused(false), 120)}
+                    onChange={(e) => setPatternQuery(e.target.value)}
+                  />
+                  {patternFocused && patternSuggestionList.length > 0 ? (
+                    <div className="theme-card absolute left-0 right-0 top-[calc(100%+6px)] z-20 rounded-card p-1">
+                      {patternSuggestionList.map((item) => (
+                        <button
+                          key={item}
+                          type="button"
+                          className="block w-full rounded px-2 py-1.5 text-left text-sm text-[#355b4a] hover:bg-[#e8dfcf]"
+                          onMouseDown={(e) => {
+                            e.preventDefault()
+                            setPatternQuery(item)
+                            setPatternFocused(false)
+                          }}
+                        >
+                          {item}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+              {patternQuery.trim() && filteredPatterns.length === 0 ? noSearchResult : null}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {filteredPatterns.map((item) => (
                   <GridCard
@@ -453,6 +600,7 @@ function AuthenticatedApp() {
                     title={item.name}
                     source={item.source}
                     imageBase64={item.imageBase64}
+                    onView={() => navigate(`/patterns/${item.id}`)}
                     onEdit={() => {
                       setItemType('pattern')
                       setItemEditing(item)
@@ -466,24 +614,56 @@ function AuthenticatedApp() {
           }
         />
         <Route
+          path="/patterns/:id"
+          element={<PatternDetailPage patterns={patterns} />}
+        />
+        <Route
           path="/finished"
           element={
             <div>
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="m-0 text-xl">🧸 作品集</h2>
-                <button className="rounded bg-primary px-3 py-2 text-white" type="button" onClick={() => openAddItem('finished')}>
-                  🧸 添加成品
+                <h2 className="section-title m-0 text-2xl">作品集</h2>
+                <button className="theme-btn theme-btn-primary rounded px-3 py-2" type="button" onClick={() => openAddItem('finished')}>
+                  添加成品
                 </button>
               </div>
               <div className="mb-3">
-                <input
-                  className="w-full rounded border bg-white p-2"
-                  placeholder="搜索成品：名称"
-                  value={finishedQuery}
-                  onChange={(e) => setFinishedQuery(e.target.value)}
-                />
+                <div className="theme-card rounded-card p-3 text-left shadow">
+                  <p className="m-0 text-sm text-[#4c665a]">成品总数</p>
+                  <p className="m-0 mt-2 text-lg font-semibold">{finishedProducts.length} 份</p>
+                </div>
               </div>
-              {filteredFinished.length === 0 ? empty : null}
+              <div className="mb-3">
+                <div className="relative">
+                  <input
+                    className="w-full rounded p-2"
+                    placeholder="搜索成品：名称"
+                    value={finishedQuery}
+                    onFocus={() => setFinishedFocused(true)}
+                    onBlur={() => setTimeout(() => setFinishedFocused(false), 120)}
+                    onChange={(e) => setFinishedQuery(e.target.value)}
+                  />
+                  {finishedFocused && finishedSuggestionList.length > 0 ? (
+                    <div className="theme-card absolute left-0 right-0 top-[calc(100%+6px)] z-20 rounded-card p-1">
+                      {finishedSuggestionList.map((item) => (
+                        <button
+                          key={item}
+                          type="button"
+                          className="block w-full rounded px-2 py-1.5 text-left text-sm text-[#355b4a] hover:bg-[#e8dfcf]"
+                          onMouseDown={(e) => {
+                            e.preventDefault()
+                            setFinishedQuery(item)
+                            setFinishedFocused(false)
+                          }}
+                        >
+                          {item}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+              {finishedQuery.trim() && filteredFinished.length === 0 ? noSearchResult : null}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {filteredFinished.map((item) => (
                   <GridCard
@@ -516,6 +696,44 @@ function AuthenticatedApp() {
         onSubmit={(payload) => void saveItem(payload)}
       />
     </Layout>
+  )
+}
+
+function PatternDetailPage({ patterns }: { patterns: Pattern[] }) {
+  const { id } = useParams()
+  const pattern = patterns.find((item) => item.id === id)
+
+  if (!pattern) {
+    return (
+      <div className="theme-card rounded-card p-4 text-[#355b4a]">
+        未找到该纸样详情。
+      </div>
+    )
+  }
+
+  return (
+    <div className="theme-card rounded-card p-4 text-[#355b4a]">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="section-title m-0 text-2xl">{pattern.name}</h2>
+        <Link to="/patterns" className="theme-btn rounded px-3 py-1.5 text-sm">
+          返回纸样
+        </Link>
+      </div>
+      <img src={pattern.imageBase64} alt={pattern.name} className="mb-3 h-56 w-full rounded object-cover" />
+      <div className="space-y-1 text-sm">
+        <p className="m-0">纸样码数：{pattern.sizeCode ?? '-'}</p>
+        <p className="m-0">胸围：{pattern.bust ?? '-'}</p>
+        <p className="m-0">腰围：{pattern.waist ?? '-'}</p>
+        <p className="m-0">臀围：{pattern.hip ?? '-'}</p>
+        <p className="m-0">长度：{pattern.lengthInfo ?? '-'}</p>
+        <p className="m-0">纸样适合布料：{pattern.suitableFabric ?? '-'}</p>
+      </div>
+      {pattern.detailRaw ? (
+        <div className="mt-3 rounded border border-[#9eb2a6] bg-[#efe5d4] p-3 text-sm whitespace-pre-wrap">
+          {pattern.detailRaw}
+        </div>
+      ) : null}
+    </div>
   )
 }
 

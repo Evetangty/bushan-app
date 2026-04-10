@@ -19,6 +19,13 @@ export interface Pattern {
   imageBase64: string
   name: string
   source?: string
+  detailRaw?: string
+  sizeCode?: string
+  bust?: string
+  waist?: string
+  hip?: string
+  lengthInfo?: string
+  suitableFabric?: string
   createdAt: number
   updatedAt: number
 }

@@ -13,6 +13,11 @@ class BushanDatabase extends Dexie {
       patterns: 'id, name, createdAt, updatedAt',
       finishedProducts: 'id, name, createdAt, updatedAt',
     })
+    this.version(2).stores({
+      fabrics: 'id, type, createdAt, updatedAt',
+      patterns: 'id, name, sizeCode, suitableFabric, createdAt, updatedAt',
+      finishedProducts: 'id, name, createdAt, updatedAt',
+    })
   }
 }
 

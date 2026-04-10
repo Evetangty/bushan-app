@@ -12,9 +12,9 @@ export function LoginPage() {
 
   if (!isSupabaseConfigured) {
     return (
-      <div className="mx-auto max-w-md rounded-card bg-white p-6 shadow">
+      <div className="theme-card mx-auto max-w-md rounded-card p-6 shadow">
         <h2 className="mt-0 text-xl font-semibold">未配置云端</h2>
-        <p className="text-sm text-gray-600">请在项目根目录创建 <code className="rounded bg-gray-100 px-1">.env</code>，填入 <code className="rounded bg-gray-100 px-1">VITE_SUPABASE_URL</code> 与 <code className="rounded bg-gray-100 px-1">VITE_SUPABASE_ANON_KEY</code>，并参考 <code className="rounded bg-gray-100 px-1">docs/SUPABASE_SETUP.md</code> 建表。</p>
+        <p className="text-sm text-[#4c665a]">请在项目根目录创建 <code className="rounded bg-[#ede4d3] px-1">.env</code>，填入 <code className="rounded bg-[#ede4d3] px-1">VITE_SUPABASE_URL</code> 与 <code className="rounded bg-[#ede4d3] px-1">VITE_SUPABASE_ANON_KEY</code>，并参考 <code className="rounded bg-[#ede4d3] px-1">docs/SUPABASE_SETUP.md</code> 建表。</p>
       </div>
     )
   }
@@ -39,21 +39,21 @@ export function LoginPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md rounded-card bg-white p-6 shadow">
-      <h2 className="mt-0 text-xl font-semibold">🧵 布山手作</h2>
-      <p className="text-sm text-gray-600">使用邮箱密码登录后，数据保存在云端，换设备登录同一账号即可同步。</p>
+    <div className="theme-card mx-auto max-w-md rounded-card p-6 shadow">
+      <h2 className="section-title mt-0 text-3xl font-semibold">布山手作</h2>
+      <p className="text-sm text-[#4c665a]">使用邮箱密码登录后，数据保存在云端，换设备登录同一账号即可同步。</p>
 
       <div className="mt-4 flex gap-2">
         <button
           type="button"
-          className={`flex-1 rounded-full py-2 text-sm font-medium ${mode === 'login' ? 'bg-primary text-white' : 'border bg-gray-50'}`}
+          className={`flex-1 rounded-full py-2 text-sm font-medium ${mode === 'login' ? 'theme-btn theme-btn-primary' : 'theme-btn'}`}
           onClick={() => setMode('login')}
         >
           登录
         </button>
         <button
           type="button"
-          className={`flex-1 rounded-full py-2 text-sm font-medium ${mode === 'register' ? 'bg-primary text-white' : 'border bg-gray-50'}`}
+          className={`flex-1 rounded-full py-2 text-sm font-medium ${mode === 'register' ? 'theme-btn theme-btn-primary' : 'theme-btn'}`}
           onClick={() => setMode('register')}
         >
           注册
@@ -63,7 +63,7 @@ export function LoginPage() {
       <label className="mt-4 block text-sm">
         邮箱
         <input
-          className="mt-1 w-full rounded border p-2"
+          className="mt-1 w-full rounded p-2"
           type="email"
           autoComplete="email"
           value={email}
@@ -73,7 +73,7 @@ export function LoginPage() {
       <label className="mt-3 block text-sm">
         密码
         <input
-          className="mt-1 w-full rounded border p-2"
+          className="mt-1 w-full rounded p-2"
           type="password"
           autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
           value={password}
@@ -85,7 +85,7 @@ export function LoginPage() {
 
       <button
         type="button"
-        className="mt-4 w-full rounded-full bg-primary py-3 text-sm font-medium text-white disabled:opacity-60"
+        className="theme-btn theme-btn-primary mt-4 w-full rounded-full py-3 text-sm font-medium disabled:opacity-60"
         disabled={pending || !email.trim() || !password}
         onClick={() => void submit()}
       >

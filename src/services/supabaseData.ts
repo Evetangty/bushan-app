@@ -27,6 +27,13 @@ export function rowToPattern(row: Record<string, unknown>): Pattern {
     imageBase64: String(row.image_base64),
     name: String(row.name),
     source: row.source != null ? String(row.source) : undefined,
+    detailRaw: row.detail_raw != null ? String(row.detail_raw) : undefined,
+    sizeCode: row.size_code != null ? String(row.size_code) : undefined,
+    bust: row.bust != null ? String(row.bust) : undefined,
+    waist: row.waist != null ? String(row.waist) : undefined,
+    hip: row.hip != null ? String(row.hip) : undefined,
+    lengthInfo: row.length_info != null ? String(row.length_info) : undefined,
+    suitableFabric: row.suitable_fabric != null ? String(row.suitable_fabric) : undefined,
     createdAt: toMs(String(row.created_at)),
     updatedAt: toMs(String(row.updated_at)),
   }
@@ -120,6 +127,13 @@ export async function cloudInsertPattern(userId: string, payload: Omit<Pattern, 
       image_base64: payload.imageBase64,
       name: payload.name,
       source: payload.source ?? null,
+      detail_raw: payload.detailRaw ?? null,
+      size_code: payload.sizeCode ?? null,
+      bust: payload.bust ?? null,
+      waist: payload.waist ?? null,
+      hip: payload.hip ?? null,
+      length_info: payload.lengthInfo ?? null,
+      suitable_fabric: payload.suitableFabric ?? null,
     })
     .select()
     .single()
@@ -130,13 +144,20 @@ export async function cloudInsertPattern(userId: string, payload: Omit<Pattern, 
 export async function cloudUpdatePattern(
   userId: string,
   id: string,
-  patch: Partial<Pick<Pattern, 'imageBase64' | 'name' | 'source'>>,
+  patch: Partial<Pick<Pattern, 'imageBase64' | 'name' | 'source' | 'detailRaw' | 'sizeCode' | 'bust' | 'waist' | 'hip' | 'lengthInfo' | 'suitableFabric'>>,
 ) {
   if (!supabase) throw new Error('Supabase 未初始化')
   const row: Record<string, unknown> = { updated_at: new Date().toISOString() }
   if (patch.imageBase64 !== undefined) row.image_base64 = patch.imageBase64
   if (patch.name !== undefined) row.name = patch.name
   if (patch.source !== undefined) row.source = patch.source ?? null
+  if (patch.detailRaw !== undefined) row.detail_raw = patch.detailRaw ?? null
+  if (patch.sizeCode !== undefined) row.size_code = patch.sizeCode ?? null
+  if (patch.bust !== undefined) row.bust = patch.bust ?? null
+  if (patch.waist !== undefined) row.waist = patch.waist ?? null
+  if (patch.hip !== undefined) row.hip = patch.hip ?? null
+  if (patch.lengthInfo !== undefined) row.length_info = patch.lengthInfo ?? null
+  if (patch.suitableFabric !== undefined) row.suitable_fabric = patch.suitableFabric ?? null
   const { error } = await supabase.from('patterns').update(row).eq('id', id).eq('user_id', userId)
   if (error) throw error
 }

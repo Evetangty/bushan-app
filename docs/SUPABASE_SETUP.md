@@ -85,6 +85,13 @@ create table public.patterns (
   image_base64 text not null,
   name text not null,
   source text,
+  detail_raw text,
+  size_code text,
+  bust text,
+  waist text,
+  hip text,
+  length_info text,
+  suitable_fabric text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -134,6 +141,20 @@ create policy "finished_delete_own" on public.finished_products for delete using
 | updatedAt        | updated_at        |
 
 纸样 / 成品同理（`name`、`source` 等）。
+
+### 3.2 已建过表的项目：纸样详情字段补丁
+
+如果你之前已执行过旧版 SQL，需要在 SQL Editor 额外执行：
+
+```sql
+alter table public.patterns add column if not exists detail_raw text;
+alter table public.patterns add column if not exists size_code text;
+alter table public.patterns add column if not exists bust text;
+alter table public.patterns add column if not exists waist text;
+alter table public.patterns add column if not exists hip text;
+alter table public.patterns add column if not exists length_info text;
+alter table public.patterns add column if not exists suitable_fabric text;
+```
 
 ## 4. 认证方式（邮箱 + 密码）
 

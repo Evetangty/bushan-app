@@ -26,3 +26,30 @@ export const genId = () =>
   typeof crypto !== 'undefined' && crypto.randomUUID
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+
+export interface ParsedPatternDetail {
+  sizeCode?: string
+  bust?: string
+  waist?: string
+  hip?: string
+  lengthInfo?: string
+  suitableFabric?: string
+}
+
+const matchValue = (text: string, label: string) => {
+  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const regex = new RegExp(`${escaped}\\s*[：:]\\s*([^\\n\\r]+)`, 'i')
+  return text.match(regex)?.[1]?.trim()
+}
+
+export const parsePatternDetail = (raw: string): ParsedPatternDetail => {
+  const text = raw.replace(/\r\n/g, '\n')
+  return {
+    sizeCode: matchValue(text, '纸样码数'),
+    bust: matchValue(text, '胸围'),
+    waist: matchValue(text, '腰围'),
+    hip: matchValue(text, '臀围'),
+    lengthInfo: matchValue(text, '长度'),
+    suitableFabric: matchValue(text, '纸样适合布料'),
+  }
+}

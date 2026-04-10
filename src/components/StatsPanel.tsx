@@ -16,10 +16,10 @@ export function StatsPanel(props: StatsPanelProps) {
   ]
 
   return (
-    <section className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <section className="mb-4 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
       {items.map((item) => (
-        <div key={item.label} className="rounded-card border bg-white p-3 text-left shadow">
-          <p className="m-0 text-sm text-gray-500">{item.label}</p>
+        <div key={item.label} className="theme-card rounded-card p-3 text-left shadow">
+          <p className="m-0 text-sm text-[#4c665a]">{item.label}</p>
           <p className="m-0 mt-2 text-lg font-semibold">{item.value}</p>
         </div>
       ))}

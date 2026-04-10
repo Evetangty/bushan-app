@@ -4,8 +4,8 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#FF9800',
-        background: '#FDF8F0',
+        primary: '#1f3b2f',
+        background: '#f3ecdf',
       },
       borderRadius: {
         card: '12px',
