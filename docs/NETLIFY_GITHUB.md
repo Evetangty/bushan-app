@@ -14,7 +14,7 @@
 1. 打开 GitHub → **New repository**
 2. 仓库名例如 `bushan-app`，选 **Public**，**不要**勾选 “Add a README”（保持空仓库更好接本地）。
 3. 创建后复制仓库地址，例如：  
-   `https://github.com/你的用户名/bushan-app.git`
+   `https://github.com/Evetangty/bushan-app`
 
 ## 2. 本地初始化并推送
 
@@ -39,12 +39,12 @@ git push -u origin main
 3. 构建设置一般会自动读 `netlify.toml`：
    - Build：`npm run build`
    - Publish：`dist`
-4. 在 **Environment variables** 添加：
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
+4. 环境变量二选一：
+   - **只要本地数据（不连 Supabase）**：不要配置 `VITE_SUPABASE_*`，或从 Netlify 中 **删除** 这两项后 **Trigger deploy → Clear cache and deploy**。数据存在用户本机浏览器的 **IndexedDB** 中，换设备不会自动同步。  
+   - **要云端同步**：在 **Environment variables** 添加 `VITE_SUPABASE_URL` 与 `VITE_SUPABASE_ANON_KEY`，再 **Deploy**。
 5. **Deploy**
 
-## 4. Supabase 生产域名
+## 5. Supabase 生产域名（仅在使用云端时）
 
 **Authentication → URL Configuration → Site URL** 填你的 Netlify 地址，例如 `https://xxx.netlify.app`。
 
@@ -52,3 +52,4 @@ git push -u origin main
 
 - 项目根目录已有 `public/_redirects` 与 `netlify.toml` 的 SPA 回退，避免刷新子路由 404。
 - 勿将 `.env` 提交到 Git（已在 `.gitignore`）；密钥只在 Netlify 后台配置。
+- **纯本地模式**：不设 `VITE_SUPABASE_*` 时，数据由 `src/localSqlite.ts`（SQLite / sql.js）读写，库文件缓存在 IndexedDB，无登录页；清除站点数据或换浏览器会丢失本地库（除非你以后自己做导出备份）。

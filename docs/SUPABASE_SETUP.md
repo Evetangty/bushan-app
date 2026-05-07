@@ -173,9 +173,9 @@ alter table public.patterns add column if not exists suitable_fabric text;
 
 当前应用把图片压成 Base64 存在字段里，**能上云但体积大**。后续可改为 **Supabase Storage**：表里存 `image_path` 或公开 URL，上传用 `supabase.storage`。
 
-## 6. 与本地 IndexedDB（Dexie）的关系
+## 6. 与本地 SQLite 的关系
 
 - **已配置** `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` 且**已登录**：数据读写走 **Supabase**。
-- **未配置** 环境变量：仅用浏览器 **IndexedDB（Dexie）**，不要求登录。
+- **未配置** 环境变量：使用浏览器内的 **SQLite（sql.js + WASM）**，整库文件持久化在 **IndexedDB**（`BushanSQLite`）中，不要求登录。
 
-可选后续：首次登录时「从本机导入到当前账号」。
+说明：从旧版「Dexie 直存对象」切到本版后，**不会自动迁移**旧 `BushanDB` 里的数据；新数据在独立库中。可选后续：首次登录时「从本机导入到当前账号」或提供导出/导入。

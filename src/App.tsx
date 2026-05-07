@@ -1,7 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
-import { db } from './db'
+import {
+  sqliteDeleteFabric,
+  sqliteDeleteFinished,
+  sqliteDeletePattern,
+  sqliteFetchAll,
+  sqliteInsertFabric,
+  sqliteInsertFinished,
+  sqliteInsertPattern,
+  sqliteUpdateFabric,
+  sqliteUpdateFinished,
+  sqliteUpdatePattern,
+} from './localSqlite'
 import { Layout } from './components/Layout'
 import {
   AddEntityModal,
@@ -90,11 +101,7 @@ function AuthenticatedApp() {
         setPatterns(data.patterns)
         setFinishedProducts(data.finishedProducts)
       } else {
-        const [nextFabrics, nextPatterns, nextFinished] = await Promise.all([
-          db.fabrics.orderBy('createdAt').reverse().toArray(),
-          db.patterns.orderBy('createdAt').reverse().toArray(),
-          db.finishedProducts.orderBy('createdAt').reverse().toArray(),
-        ])
+        const { fabrics: nextFabrics, patterns: nextPatterns, finishedProducts: nextFinished } = await sqliteFetchAll()
         setFabrics(nextFabrics)
         setPatterns(nextPatterns)
         setFinishedProducts(nextFinished)
@@ -223,13 +230,13 @@ function AuthenticatedApp() {
         }
       } else {
         if (fabricEditing) {
-          await db.fabrics.update(fabricEditing.id, {
+          await sqliteUpdateFabric(fabricEditing.id, {
             ...payload,
             updatedAt: now,
             usedQuantity: payload.usedQuantity ?? fabricEditing.usedQuantity,
           })
         } else {
-          await db.fabrics.add({
+          await sqliteInsertFabric({
             id: genId(),
             ...payload,
             usedQuantity: 0,
@@ -290,7 +297,7 @@ function AuthenticatedApp() {
             usedQuantity: 0,
           })
         } else {
-          await db.fabrics.add({
+          await sqliteInsertFabric({
             id: genId(),
             ...payload.data,
             usedQuantity: 0,
@@ -318,7 +325,7 @@ function AuthenticatedApp() {
             suitableFabric: payload.data.suitableFabric,
           })
         } else {
-          await db.patterns.add({ id: genId(), ...payload.data, createdAt: now, updatedAt: now })
+          await sqliteInsertPattern({ id: genId(), ...payload.data, createdAt: now, updatedAt: now })
         }
         setAddEntityModalOpen(false)
         await reload()
@@ -331,7 +338,7 @@ function AuthenticatedApp() {
           name: payload.data.name,
         })
       } else {
-        await db.finishedProducts.add({ id: genId(), ...payload.data, createdAt: now, updatedAt: now })
+        await sqliteInsertFinished({ id: genId(), ...payload.data, createdAt: now, updatedAt: now })
       }
       setAddEntityModalOpen(false)
       await reload()
@@ -389,9 +396,9 @@ function AuthenticatedApp() {
           }
         } else {
           if (itemEditing) {
-            await db.patterns.update(itemEditing.id, { ...payload, updatedAt: now })
+            await sqliteUpdatePattern(itemEditing.id, { ...payload, updatedAt: now })
           } else {
-            await db.patterns.add({ id: genId(), ...payload, createdAt: now, updatedAt: now })
+            await sqliteInsertPattern({ id: genId(), ...payload, createdAt: now, updatedAt: now })
           }
         }
       } else {
@@ -404,9 +411,9 @@ function AuthenticatedApp() {
           }
         } else {
           if (itemEditing) {
-            await db.finishedProducts.update(itemEditing.id, { ...finishedPayload, updatedAt: now })
+            await sqliteUpdateFinished(itemEditing.id, { ...finishedPayload, updatedAt: now })
           } else {
-            await db.finishedProducts.add({ id: genId(), ...finishedPayload, createdAt: now, updatedAt: now })
+            await sqliteInsertFinished({ id: genId(), ...finishedPayload, createdAt: now, updatedAt: now })
           }
         }
       }
@@ -427,9 +434,9 @@ function AuthenticatedApp() {
         if (entityType === 'pattern') await cloudDeletePattern(userId, id)
         if (entityType === 'finished') await cloudDeleteFinished(userId, id)
       } else {
-        if (entityType === 'fabric') await db.fabrics.delete(id)
-        if (entityType === 'pattern') await db.patterns.delete(id)
-        if (entityType === 'finished') await db.finishedProducts.delete(id)
+        if (entityType === 'fabric') await sqliteDeleteFabric(id)
+        if (entityType === 'pattern') await sqliteDeletePattern(id)
+        if (entityType === 'finished') await sqliteDeleteFinished(id)
       }
       await reload()
     } catch (err) {
@@ -447,7 +454,7 @@ function AuthenticatedApp() {
       if (useCloud && userId) {
         await cloudUpdateFabric(userId, useFabricTarget.id, { usedQuantity: nextUsed })
       } else {
-        await db.fabrics.update(useFabricTarget.id, {
+        await sqliteUpdateFabric(useFabricTarget.id, {
           usedQuantity: nextUsed,
           updatedAt: Date.now(),
         })
